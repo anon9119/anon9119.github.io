@@ -114,14 +114,24 @@
 
                   <div class="column has-text-centered">
                     <div class="publication-links">
-                         <!-- Arxiv PDF link -->
+                         <!-- Paper PDF link -->
                       <span class="link-block">
-                        <a href="javascript:void(0)" 
+                        <a href="static/pdfs/main.pdf" target="_blank"
                         class="external-link button is-normal is-rounded is-dark">
                         <span class="icon">
                           <i class="fas fa-file-pdf"></i>
                         </span>
                         <span>Paper</span>
+                      </a>
+                    </span>
+                         <!-- Supplementary PDF link -->
+                      <span class="link-block">
+                        <a href="static/pdfs/sup.pdf" target="_blank"
+                        class="external-link button is-normal is-rounded is-dark">
+                        <span class="icon">
+                          <i class="fas fa-file-pdf"></i>
+                        </span>
+                        <span>Supplementary</span>
                       </a>
                     </span>
 
@@ -210,20 +220,23 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
 <!-- <!-- End youtube video -->
 
 
-<!-- Video carousel -->
+<!-- On-Manifold Audio Examples -->
 <section class="hero is-small">
   <div class="hero-body">
     <div class="container">
-      <h2 class="title">Audio Examples</h2>
+      <h2 class="title">On-Manifold Audio Examples</h2>
       <div class="subtitle">
-        To be uploaded shortly...
+        In these examples, the target audio was rendered by the synthesizer itself.
       </div>
       <div class="text">
-        Coming soon.
-          <br />
-          <br />
+        We invert reconstructions for two synthesizers: <em>Surge XT</em>, a full-featured open-source subtractive synth used in real-world production, and <em>Dexed</em>, an open-source emulation of the Yamaha DX7 FM synthesizer. Because the targets are drawn from each synthesizer's own output, a parameter setting that exactly reproduces the target always exists; the task reduces to recovering it.
+        <br />
+        <br />
       </div>
-      <div id="container-surge_full"></div>
+      <div class="text">
+        Clicking any play button opens waveform and spectrogram displays for side-by-side comparison. Press &ldquo;Fetch more samples&rdquo; to load a different batch.
+      </div>
+      <div id="container-surge_vst"></div>
     </div>
   </div>
 </section>
@@ -231,20 +244,52 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
 <section class="hero is-small is-light">
   <div class="hero-body">
     <div class="container">
-      <div id="container-surge_simple"></div>
+      <div id="container-dexed_vst"></div>
     </div>
   </div>
 </section>
 
+
+<!-- Off-Manifold Audio Examples -->
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title">Off-Manifold Audio Examples</h2>
+      <div class="subtitle">
+        In these examples, the target audio is a real-world recording &mdash; not produced by either synthesizer.
+      </div>
+      <div class="text">
+        Off-manifold inversion is the harder regime: the model must produce parameter estimates for audio that no setting of the synthesizer can exactly reproduce, and ground-truth annotations do not exist.
+      </div>
+      <div id="container-surge_ood"></div>
+    </div>
+  </div>
+</section>
 
 <section class="hero is-small is-light">
   <div class="hero-body">
     <div class="container">
-      <div id="container-fsd"></div>
+      <div id="container-dexed_ood"></div>
     </div>
   </div>
 </section>
-<!-- End video carousel -->
+
+
+<!-- Noise Sweep -->
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container">
+      <h2 class="title">Noise Sweep</h2>
+      <div class="subtitle">
+        How reconstructions change as we partially noise the audio reference at inference.
+      </div>
+      <div class="text">
+        Our flow learns to map audio to parameters at every noise level, so at inference we can dial the strength of audio conditioning continuously. The columns below sweep the noise level <em>t</em> from <em>t</em>=1.0 (clean conditioning) down to <em>t</em>=0.0 (fully noised &mdash; equivalent to unconditional sampling), with one row per JDF variant.
+      </div>
+      <div id="container-noise_sweep"></div>
+    </div>
+  </div>
+</section>
 
 
 
@@ -289,21 +334,34 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
     import WaveSurfer from 'https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/wavesurfer.esm.js';
     import Spectrogram from 'https://cdn.jsdelivr.net/npm/wavesurfer.js@7/dist/plugins/spectrogram.js';
 
-    const MODEL_ORDER = ['ground_truth', 'flow', 'flowmlp', 'ffn', 'vae'];
     const MODEL_LABELS = {
       'ground_truth': 'Ground Truth',
-      'flow': 'CNF (Param2Tok)',
-      'flowmlp': 'CNF (MLP)',
-      'ffn': 'AST',
-      'vae': 'VAE + RealNVP'
+      'omni-audio': 'JDF-A',
+      'omni': 'JDF',
+      'omni-param': 'JDF-<span style="font-variant: small-caps;">ParamOnly</span>',
+      'base': 'Conditional'
     };
 
+    const SURGE_MODELS = ['ground_truth', 'omni-audio', 'omni', 'omni-param', 'base'];
+    const DEXED_MODELS = ['ground_truth', 'omni-audio', 'base'];
+
     const TABLES = [
-      { title: 'Surge XT (Full)', path: 'surge_full' },
-      { title: 'Surge XT (Simple)', path: 'surge_simple' },
-      { title: 'OOD (NSynth)', path: 'nsynth' },
-      { title: 'OOD (FSD50K)', path: 'fsd' },
+      { title: 'Surge XT', path: 'surge_vst', models: SURGE_MODELS },
+      { title: 'Dexed', path: 'dexed_vst', models: DEXED_MODELS },
+      { title: 'Surge XT', path: 'surge_ood', models: SURGE_MODELS },
+      { title: 'Dexed', path: 'dexed_ood', models: DEXED_MODELS },
     ];
+
+    const NOISE_SWEEP = {
+      title: 'Surge XT (Off-Manifold)',
+      path: 'noise_sweep',
+      containerId: 'container-noise_sweep',
+      samples: ['0033', '0043', '0047', '0096'],
+      models: ['omni-audio', 'omni', 'omni-param'],
+      // Levels rendered left-to-right in this order (high noise → low noise).
+      levels: ['1.0', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3', '0.2', '0.1', '0.0'],
+      missingLevels: new Set(),
+    };
 
     let globalExpanded = null;
 
@@ -334,18 +392,22 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
 
     function collapseGlobalExpanded() {
       if (globalExpanded) {
-        const { waveSurfers, buttons, row } = globalExpanded;
+        const { waveSurfers, buttons, row, rowspanRestores, extraCleanup } = globalExpanded;
         Object.entries(waveSurfers).forEach(([model, ws]) => {
           if (ws.isPlaying()) ws.pause();
           ws.destroy();
         });
         Object.values(buttons).forEach(btn => updateButtonText(btn, false));
         row.remove();
+        if (extraCleanup) extraCleanup.forEach(node => node.remove());
+        if (rowspanRestores) {
+          rowspanRestores.forEach(({ cell, value }) => cell.setAttribute('rowspan', value));
+        }
         globalExpanded = null;
       }
     }
 
-    function buildTableUI(title, tableId, path) {
+    function buildTableUI(title, tableId, path, models) {
       const container = document.createElement('div');
       const heading = document.createElement('h2');
       heading.classList.add('playerHead')
@@ -359,7 +421,7 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
         <thead>
           <tr>
             <th>Sample</th>
-            ${MODEL_ORDER.map(m => `<th>${MODEL_LABELS[m]}</th>`).join('')}
+            ${models.map(m => `<th>${MODEL_LABELS[m]}</th>`).join('')}
           </tr>
         </thead>
         <tbody></tbody>
@@ -370,7 +432,7 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
       document.getElementById('container-' + path).appendChild(container);
     }
 
-    function populateTableBody(samples, tableId, path) {
+    function populateTableBody(samples, tableId, path, models) {
       const table = document.getElementById(tableId);
       const tbody = table.querySelector('tbody');
       tbody.innerHTML = '';
@@ -379,8 +441,8 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
         const row = document.createElement('tr');
         row.setAttribute('data-sample', sample);
         row.innerHTML = `
-          <td>${sample.replace('sample_', 'Sample ')}</td>
-          ${MODEL_ORDER.map(m => `<td><button class="play-btn" data-model="${m}"><i class='fas fa-play'></i></button></td>`).join('')}
+          <td>${sample}</td>
+          ${models.map(m => `<td><button class="play-btn" data-model="${m}"><i class='fas fa-play'></i></button></td>`).join('')}
         `;
         tbody.appendChild(row);
 
@@ -424,7 +486,7 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
             const waveSurfers = {};
             const buttons = {};
 
-            MODEL_ORDER.forEach(modelName => {
+            models.forEach(modelName => {
               const td = document.createElement('td');
               td.innerHTML = `
                 <div class="model-detail">
@@ -439,7 +501,7 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
               waveSurfers[modelName] = createWaveSurfer(td, url);
             });
 
-            MODEL_ORDER.forEach(m => {
+            models.forEach(m => {
               const b = row.querySelector(`.play-btn[data-model='${m}']`);
               if (b) buttons[m] = b;
             });
@@ -469,7 +531,7 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
       });
     }
 
-    function shuffleArray(array, seed = 42) {
+    function shuffleArray(array, seed = 51) {
       let rng = mulberry32(seed);
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(rng() * (i + 1));
@@ -487,34 +549,207 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
       };
     }
 
-    async function loadSamples(seed = 42) {
-      // document.getElementById('tables').innerHTML = '';
-      for (const { title, path } of TABLES) {
+    function buildNoiseSweepUI() {
+      const { title, path, containerId, samples: rawSamples, models, levels, missingLevels } = NOISE_SWEEP;
+      const samples = shuffleArray(rawSamples.slice(), 7);
+      const tableId = `table-${path}`;
+
+      const container = document.createElement('div');
+      const heading = document.createElement('h2');
+      heading.classList.add('playerHead', 'title', 'is-4');
+      heading.textContent = title;
+      container.appendChild(heading);
+
+      const table = document.createElement('table');
+      table.id = tableId;
+      let bodyHtml = '';
+      for (const sample of samples) {
+        for (let mi = 0; mi < models.length; mi++) {
+          const model = models[mi];
+          const isFirst = mi === 0;
+          bodyHtml += `<tr data-sample="${sample}" data-model="${model}">`;
+          if (isFirst) {
+            bodyHtml += `<td rowspan="${models.length}"><button class="play-btn" data-cell="target"><i class='fas fa-play'></i></button></td>`;
+          }
+          bodyHtml += `<td>${MODEL_LABELS[model]}</td>`;
+          for (const l of levels) {
+            if (missingLevels.has(l)) {
+              bodyHtml += `<td>—</td>`;
+            } else {
+              bodyHtml += `<td><button class="play-btn" data-cell="level_${l}"><i class='fas fa-play'></i></button></td>`;
+            }
+          }
+          bodyHtml += `</tr>`;
+        }
+      }
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Target</th>
+            <th>Model</th>
+            ${levels.map(l => `<th>t=${l}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>${bodyHtml}</tbody>
+      `;
+      container.appendChild(table);
+
+      const mount = document.getElementById(containerId);
+      mount.innerHTML = '';
+      mount.appendChild(container);
+
+      table.querySelectorAll('.play-btn').forEach(btn => {
+        btn.addEventListener('click', () => onNoiseSweepPlay(btn, table));
+      });
+    }
+
+    function onNoiseSweepPlay(btn, table) {
+      const { path, levels, missingLevels } = NOISE_SWEEP;
+      const cell = btn.dataset.cell;
+
+      // Target click toggles playback inside the currently-expanded view if
+      // it's for this sample (so playhead shows on its waveform). Otherwise
+      // expand the first model row, which loads the target wavesurfer in the
+      // merged Target cell.
+      let row, sample, model, expandKey;
+      if (cell === 'target') {
+        sample = btn.closest('tr').dataset.sample;
+        // Use the first model row for the (sample, model) expand key.
+        row = table.querySelector(`tr[data-sample="${sample}"]`);
+        model = row.dataset.model;
+      } else {
+        row = btn.closest('tr');
+        sample = row.dataset.sample;
+        model = row.dataset.model;
+      }
+      expandKey = `noise:${sample}:${model}`;
+
+      if (globalExpanded?.expandKey === expandKey) {
+        const ws = globalExpanded.waveSurfers[cell];
+        const b = globalExpanded.buttons[cell];
+        if (!ws) return;
+        if (ws.isPlaying()) {
+          ws.pause();
+          updateButtonText(b, false);
+        } else {
+          Object.entries(globalExpanded.waveSurfers).forEach(([k, otherWs]) => {
+            if (k !== cell && otherWs.isPlaying()) {
+              otherWs.pause();
+              updateButtonText(globalExpanded.buttons[k], false);
+            }
+          });
+          ws.play();
+          updateButtonText(b, true);
+        }
+        return;
+      }
+
+      collapseGlobalExpanded();
+
+      // Bump rowspan on the Sample/Target merged cells so the detail row
+      // (inserted directly after the clicked row) is included in the merge.
+      const groupRows = Array.from(table.querySelectorAll(`tr[data-sample="${sample}"]`));
+      const rowspanRestores = [];
+      groupRows[0].querySelectorAll('td[rowspan]').forEach(c => {
+        const original = c.getAttribute('rowspan');
+        rowspanRestores.push({ cell: c, value: original });
+        c.setAttribute('rowspan', String(parseInt(original, 10) + 1));
+      });
+
+      const waveSurfers = {};
+      const buttons = {};
+      const extraCleanup = [];
+
+      // Inject the target wavesurfer into the merged Target cell so it
+      // visually spans every model row plus the detail row.
+      const targetBtn = groupRows[0].querySelector('.play-btn[data-cell="target"]');
+      const targetCell = targetBtn.parentElement;
+      const targetDetailDiv = document.createElement('div');
+      targetDetailDiv.className = 'noise-target-detail';
+      targetDetailDiv.innerHTML = `<div class="waveform"></div><div class="spectrogram"></div>`;
+      targetCell.appendChild(targetDetailDiv);
+      extraCleanup.push(targetDetailDiv);
+      waveSurfers['target'] = createWaveSurfer(targetCell, `static/audio/restructured/${path}/${sample}/target.wav`);
+      buttons['target'] = targetBtn;
+
+      const detailRow = document.createElement('tr');
+      detailRow.classList.add('expanded-row');
+
+      // Col 0 (Target) is rowspanned — skip. First explicit cell goes to
+      // col 1 (Model column position).
+      const ctrlTd = document.createElement('td');
+      ctrlTd.innerHTML = `
+        <div class="controls">
+          <button class="ctrl-btn" data-action="stop"><i class="fas fa-stop"></i></button>
+          <button class="ctrl-btn" data-action="rewind"><i class="fas fa-backward"></i></button>
+        </div>
+      `;
+      detailRow.appendChild(ctrlTd);
+
+      for (const l of levels) {
+        const td = document.createElement('td');
+        if (missingLevels.has(l)) {
+          td.innerHTML = `<div class="model-detail"><div><strong>t=${l}</strong></div><div style="height:80px;display:flex;align-items:center;justify-content:center;color:#999;">—</div></div>`;
+        } else {
+          td.innerHTML = `<div class="model-detail"><div><strong>t=${l}</strong></div><div class="waveform"></div><div class="spectrogram"></div></div>`;
+          waveSurfers[`level_${l}`] = createWaveSurfer(td, `static/audio/restructured/${path}/${sample}/${model}/level_${l}.wav`);
+        }
+        detailRow.appendChild(td);
+      }
+
+      row.querySelectorAll('.play-btn').forEach(b => { if (!buttons[b.dataset.cell]) buttons[b.dataset.cell] = b; });
+
+      row.parentNode.insertBefore(detailRow, row.nextSibling);
+      globalExpanded = { row: detailRow, waveSurfers, buttons, expandKey, rowspanRestores, extraCleanup };
+
+      detailRow.querySelector('[data-action="stop"]').addEventListener('click', () => {
+        Object.entries(waveSurfers).forEach(([k, ws]) => {
+          if (ws.isPlaying()) ws.pause();
+          ws.seekTo(0);
+          if (buttons[k]) updateButtonText(buttons[k], false);
+        });
+      });
+      detailRow.querySelector('[data-action="rewind"]').addEventListener('click', () => {
+        Object.values(waveSurfers).forEach(ws => ws.seekTo(0));
+      });
+
+      const ws = waveSurfers[cell];
+      if (ws) {
+        ws.play();
+        updateButtonText(btn, true);
+      }
+    }
+
+    async function loadSamples(seed = 51) {
+      for (const { title, path, models } of TABLES) {
         const res = await fetch(`static/txt/${path}.txt`);
         const text = await res.text();
         const lines = text.split('\n').filter(Boolean);
         const picked = shuffleArray(lines, seed).slice(0, 8);
         const tableId = `table-${path}`;
-        buildTableUI(title, tableId, path);
-        populateTableBody(picked, tableId, path);
+        buildTableUI(title, tableId, path, models);
+        populateTableBody(picked, tableId, path, models);
       }
+      buildNoiseSweepUI();
 
       document.addEventListener('click', async (e) => {
         const btn = e.target.closest('.refresh-btn');
         if (btn) {
           const path = btn.dataset.path;
           const tableId = btn.dataset.table;
+          const tableMeta = TABLES.find(t => t.path === path);
+          const models = tableMeta ? tableMeta.models : [];
           const res = await fetch(`static/txt/${path}.txt`);
           const text = await res.text();
           const lines = text.split('\n').filter(Boolean);
           const picked = shuffleArray(lines, Date.now()).slice(0, 8);
-          populateTableBody(picked, tableId, path);
+          populateTableBody(picked, tableId, path, models);
           collapseGlobalExpanded();
         }
       });
     }
 
-    loadSamples(123456);
+    loadSamples(5124);
   </script>
 
   </body>
