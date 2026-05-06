@@ -497,7 +497,7 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
               `;
               detailRow.appendChild(td);
 
-              const url = `static/audio/restructured/${path}/${sample}/${modelName}.wav`;
+              const url = `static/audio/restructured/${path}/${sample}/${modelName}.mp3`;
               waveSurfers[modelName] = createWaveSurfer(td, url);
             });
 
@@ -669,7 +669,7 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
       targetDetailDiv.innerHTML = `<div class="waveform"></div><div class="spectrogram"></div>`;
       targetCell.appendChild(targetDetailDiv);
       extraCleanup.push(targetDetailDiv);
-      waveSurfers['target'] = createWaveSurfer(targetCell, `static/audio/restructured/${path}/${sample}/target.wav`);
+      waveSurfers['target'] = createWaveSurfer(targetCell, `static/audio/restructured/${path}/${sample}/target.mp3`);
       buttons['target'] = targetBtn;
 
       const detailRow = document.createElement('tr');
@@ -692,7 +692,7 @@ Evaluating on Surge XT and Dexed, we find our method substantially improves inve
           td.innerHTML = `<div class="model-detail"><div><strong>t=${l}</strong></div><div style="height:80px;display:flex;align-items:center;justify-content:center;color:#999;">—</div></div>`;
         } else {
           td.innerHTML = `<div class="model-detail"><div><strong>t=${l}</strong></div><div class="waveform"></div><div class="spectrogram"></div></div>`;
-          waveSurfers[`level_${l}`] = createWaveSurfer(td, `static/audio/restructured/${path}/${sample}/${model}/level_${l}.wav`);
+          waveSurfers[`level_${l}`] = createWaveSurfer(td, `static/audio/restructured/${path}/${sample}/${model}/level_${l}.mp3`);
         }
         detailRow.appendChild(td);
       }
